@@ -4,33 +4,64 @@ class AddressesController < ApplicationController
   end
 
   def create
-    Rails.logger.info "=== ADDRESS CONTROLLER: All params: #{params.inspect}"
-    @address = params[:address]
-    Rails.logger.info "=== ADDRESS CONTROLLER: Received address: '#{@address}'"
-    Rails.logger.info "=== ADDRESS CONTROLLER: Address present?: #{@address.present?}"
+    @address = sanitized_address
     
-    if @address.present?
-      Rails.logger.info "=== ADDRESS CONTROLLER: Creating WeatherService"
-      weather_service = WeatherService.new(@address)
-      
-      Rails.logger.info "=== ADDRESS CONTROLLER: Calling get_forecast"
-      @weather_data = weather_service.get_forecast
-      
-      Rails.logger.info "=== ADDRESS CONTROLLER: Weather data received: #{@weather_data}"
-      
-      if @weather_data[:error]
-        Rails.logger.error "=== ADDRESS CONTROLLER: Error in weather data: #{@weather_data[:error]}"
-        flash[:alert] = @weather_data[:error]
-      else
-        Rails.logger.info "=== ADDRESS CONTROLLER: Success! Weather data retrieved"
-        flash[:notice] = "Weather data retrieved successfully!"
-      end
-      
-      render :new
+    if @address.blank?
+      handle_empty_address
     else
-      Rails.logger.warn "=== ADDRESS CONTROLLER: No address provided"
-      flash[:alert] = "Please enter an address"
-      render :new
+      fetch_weather_data
     end
+    
+    render :new
+  end
+
+  private
+
+  def sanitized_address
+    params[:address]&.strip
+  end
+
+  def handle_empty_address
+    flash[:alert] = "Please enter an address"
+    Rails.logger.info "Address submission failed: No address provided"
+  end
+
+  def fetch_weather_data
+    Rails.logger.info "Fetching weather data for: #{@address}"
+    
+    @weather_data = WeatherService.new(@address).get_forecast
+    
+    if weather_request_successful?
+      handle_successful_request
+    else
+      handle_failed_request
+    end
+  rescue StandardError => e
+    handle_service_error(e)
+  end
+
+  def weather_request_successful?
+    @weather_data && !@weather_data[:error]
+  end
+
+  def handle_successful_request
+    flash[:notice] = "Weather data retrieved successfully!"
+    log_cache_status
+  end
+
+  def handle_failed_request
+    flash[:alert] = @weather_data[:error]
+    Rails.logger.warn "Weather request failed for #{@address}: #{@weather_data[:error]}"
+  end
+
+  def handle_service_error(error)
+    flash[:alert] = "Unable to fetch weather data. Please try again."
+    Rails.logger.error "Weather service error for #{@address}: #{error.message}"
+    @weather_data = nil
+  end
+
+  def log_cache_status
+    status = @weather_data[:cached] ? "cached" : "live"
+    Rails.logger.info "Weather data retrieved for #{@address} (#{status})"
   end
 end
