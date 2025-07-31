@@ -1,27 +1,56 @@
-<h1>Enter Your Address</h1>
+<h1>Weather Forecast</h1>
 
 <% if flash[:notice] %>
-  <div style="color: green; margin: 10px 0;">
+  <div style="color: green; margin: 10px 0; padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px;">
     <%= flash[:notice] %>
   </div>
 <% end %>
 
 <% if flash[:alert] %>
-  <div style="color: red; margin: 10px 0;">
+  <div style="color: #721c24; margin: 10px 0; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">
     <%= flash[:alert] %>
   </div>
 <% end %>
 
-<%= form_with url: addresses_path, method: :post, local: true do |form| %>
+<%= form_with url: addresses_path, method: :post, local: true, data: { turbo: false } do |form| %>
   <div style="margin: 20px 0;">
-    <%= form.label :address, "Address:", style: "display: block; margin-bottom: 5px;" %>
+    <%= form.label :address, "Enter Location:", style: "display: block; margin-bottom: 5px; font-weight: bold;" %>
     <%= form.text_field :address, 
-        placeholder: "123 Main St, City, State, ZIP", 
-        style: "width: 400px; padding: 8px; font-size: 16px;" %>
+        placeholder: "New York, San Francisco, London...", 
+        style: "width: 400px; padding: 10px; font-size: 16px; border: 2px solid #ddd; border-radius: 4px;" %>
   </div>
   
   <div>
-    <%= form.submit "Submit Address", 
-        style: "background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;" %>
+    <%= form.submit "Get Weather", 
+        style: "background-color: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;" %>
+  </div>
+<% end %>
+
+<!-- DEBUG: weather_data = <%= @weather_data.inspect %> -->
+<% if @weather_data && !@weather_data[:error] %>
+  <div style="margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+    <h2 style="color: #495057; margin-bottom: 15px;">Weather for <%= @weather_data[:address] %></h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+      <div style="text-align: center;">
+        <h3 style="color: #007bff; font-size: 2em; margin: 0;"><%= @weather_data[:temperature] %>°C</h3>
+        <p style="margin: 5px 0; color: #6c757d;">Temperature</p>
+      </div>
+      
+      <div style="text-align: center;">
+        <h3 style="color: #28a745; font-size: 1.2em; margin: 0; text-transform: capitalize;"><%= @weather_data[:description] %></h3>
+        <p style="margin: 5px 0; color: #6c757d;">Conditions</p>
+      </div>
+      
+      <div style="text-align: center;">
+        <h3 style="color: #dc3545; font-size: 1.5em; margin: 0;"><%= @weather_data[:feels_like] %>°C</h3>
+        <p style="margin: 5px 0; color: #6c757d;">Feels Like</p>
+      </div>
+      
+      <div style="text-align: center;">
+        <h3 style="color: #17a2b8; font-size: 1.5em; margin: 0;"><%= @weather_data[:humidity] %>%</h3>
+        <p style="margin: 5px 0; color: #6c757d;">Humidity</p>
+      </div>
+    </div>
   </div>
 <% end %>
