@@ -12,6 +12,17 @@ class WeatherService
   def get_forecast
     Rails.logger.info "=== WEATHER SERVICE: Starting forecast for: #{@address}"
     
+    # Check cache first
+    cache_key = generate_cache_key(@address)
+    cached_result = get_from_cache(cache_key)
+    
+    if cached_result
+      Rails.logger.info "=== WEATHER SERVICE: Returning cached result for: #{@address}"
+      return cached_result.merge(cached: true)
+    end
+    
+    Rails.logger.info "=== WEATHER SERVICE: Cache miss, fetching fresh data for: #{@address}"
+    
     coords = geocode_address
     Rails.logger.info "=== WEATHER SERVICE: Coordinates: #{coords}"
     
@@ -25,8 +36,14 @@ class WeatherService
           temperature: weather['temperature'].round,
           feels_like: weather['temperature'].round,
           description: weather_description(weather['weathercode']),
-          humidity: 65 # Approximate/static
+          humidity: 65, # Approximate/static
+          cached: false
         }
+        
+        # Cache the result for 30 minutes
+        cache_result(cache_key, result)
+        Rails.logger.info "=== WEATHER SERVICE: Cached result for 30 minutes"
+        
         Rails.logger.info "=== WEATHER SERVICE: Final result: #{result}"
         result
       else
@@ -88,5 +105,30 @@ class WeatherService
 
   def error(message)
     { error: message }
+  end
+
+  def generate_cache_key(address)
+    # Normalize address for consistent caching
+    normalized_address = address.strip.downcase.gsub(/\s+/, '_')
+    "weather_forecast:#{normalized_address}"
+  end
+
+  def get_from_cache(cache_key)
+    cached_data = $redis.get(cache_key)
+    return nil unless cached_data
+    
+    JSON.parse(cached_data, symbolize_names: true)
+  rescue JSON::ParserError, Redis::BaseError => e
+    Rails.logger.error "=== WEATHER SERVICE: Cache read error: #{e.message}"
+    nil
+  end
+
+  def cache_result(cache_key, result)
+    # Remove the cached flag before storing
+    cache_data = result.except(:cached)
+    $redis.setex(cache_key, 30.minutes.to_i, cache_data.to_json)
+  rescue Redis::BaseError => e
+    Rails.logger.error "=== WEATHER SERVICE: Cache write error: #{e.message}"
+    # Don't fail the request if caching fails
   end
 end

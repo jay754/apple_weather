@@ -29,7 +29,18 @@
 <!-- DEBUG: weather_data = <%= @weather_data.inspect %> -->
 <% if @weather_data && !@weather_data[:error] %>
   <div style="margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-    <h2 style="color: #495057; margin-bottom: 15px;">Weather for <%= @weather_data[:address] %></h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h2 style="color: #495057; margin: 0;">Weather for <%= @weather_data[:address] %></h2>
+      <% if @weather_data[:cached] %>
+        <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+          📋 CACHED
+        </span>
+      <% else %>
+        <span style="background-color: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+          🌐 LIVE
+        </span>
+      <% end %>
+    </div>
     
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
       <div style="text-align: center;">
