@@ -6,6 +6,21 @@ A simple Rails application that fetches and displays weather information for any
 
 - **Weather Lookup**: Enter any city or address to get current weather conditions
 
+## How to Run
+
+1. **Start Redis:**
+   ```bash
+   redis-server
+   ```
+
+2. **Start the app:**
+   ```bash
+   bin/rails server
+   ```
+
+3. **Open your browser:**
+   Navigate to http://localhost:3000
+
 ## Usage
 
 1. Enter a city name or address (e.g., "New York", "London", "Tokyo")
